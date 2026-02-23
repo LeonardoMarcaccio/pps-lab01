@@ -1,38 +1,17 @@
 import example.model.AccountHolder;
-import example.model.SimpleBankAccount;
 import example.model.SimpleBankAccountWithFees;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+public class SimpleBankAccountWithFeesTest extends BankAccountTest {
+    private final double DefaultFee = 1;
 
-public class SimpleBankAccountWithFeesTest extends SimpleBankAccountTest {
-
-    @BeforeEach
-    void beforeEach(){
-        setAccountHolder(new AccountHolder(getName(), getSurname(), getId()));
-        setBankAccount(new SimpleBankAccountWithFees(getAccountHolder(), getDefaultBalance()));
+    @Override
+    void testSetup() {
+        this.accountHolder = new AccountHolder(this.name, this.surname, this.id);
+        this.bankAccount = new SimpleBankAccountWithFees(this.accountHolder, this.defaultBalance, this.DefaultFee);
     }
 
-    @Test
-    void testInitialBalance() {
-        super.testInitialBalance();
+    @Override
+    double expectedWithdrawBalance() {
+        return bankAccount.getBalance() - withdrawAmount - this.DefaultFee;
     }
-
-    @Test
-    void testDeposit() {super.testDeposit();}
-
-    @Test
-    void testWrongDeposit() {super.testWrongDeposit();}
-
-    @Test
-    void testWithdraw() {
-        getBankAccount().deposit(getAccountHolder().id(), getDepositAmount());
-        double withdrawLeftoverBalance = getBankAccount().getBalance() - getWithdrawAmount() - SimpleBankAccountWithFees.Fee;
-        getBankAccount().withdraw(getAccountHolder().id(), getWithdrawAmount());
-        assertEquals(withdrawLeftoverBalance, getBankAccount().getBalance());
-    }
-
-    @Test
-    void testWrongWithdraw() {super.testWrongWithdraw();}
 }

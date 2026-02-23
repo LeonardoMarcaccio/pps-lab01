@@ -2,10 +2,15 @@ package example.model;
 
 public class SimpleBankAccountWithFees extends SimpleBankAccount {
 
-    public static final double Fee = 1;
+    private final double Fee;
 
-    public SimpleBankAccountWithFees(AccountHolder holder, double balance) {
+    public double getFee() {
+        return super.getBalance();
+    }
+
+    public SimpleBankAccountWithFees(AccountHolder holder, double balance, double fee) {
         super(holder, balance);
+        this.Fee = fee;
     }
 
     @Override
