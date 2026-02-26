@@ -25,7 +25,15 @@ public class SmartDoorLockImpl implements SmartDoorLock{
 
     @Override
     public void setPin(int pin) {
-        this.pin = Optional.of(pin);
+        if (!this.isBlockedStatus) {
+            if (!this.isLockedStatus) {
+                this.pin = Optional.of(pin);
+            } else {
+                throw new IllegalStateException("Door is locked");
+            }
+        } else {
+            throw new IllegalStateException("The door is blocked");
+        }
     }
 
     @Override

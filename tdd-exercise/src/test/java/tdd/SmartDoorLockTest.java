@@ -14,6 +14,8 @@ public class SmartDoorLockTest {
     private static final int WRONG_PIN = 2222;
     private static final String DOOR_ALREADY_UNLOCKED = "The door was already unlocked";
     private static final String DOOR_ALREADY_LOCKED = "The door was already locked";
+    private static final String DOOR_CURRENTLY_BLOCKED = "The door is blocked";
+    private static final String DOOR_CURRENTLY_LOCKED = "Door is locked";
     private static final String PIN_NOT_SET = "Pin wasn't set";
 
     /* QUESTION TO THE PROFESSOR
@@ -39,7 +41,10 @@ public class SmartDoorLockTest {
     void testDefaultLock() {
         assertFalse(this.lock.isLocked());
         assertFalse(this.lock.isBlocked());
-        Exception exception = assertThrows(NoSuchElementException.class, () -> this.lock.getPin());
+        Exception exception = assertThrows(
+            NoSuchElementException.class,
+            () -> this.lock.getPin()
+        );
         assertEquals(PIN_NOT_SET, exception.getMessage());
     }
 
@@ -50,7 +55,39 @@ public class SmartDoorLockTest {
     }
 
     @Test
-    void testDoorUnlock() {
+    void testPinSettingInBlockState() {
+        this.lock.setPin(DEFAULT_PIN);
+        forceBlock();
+        Exception exception = assertThrows(
+            IllegalStateException.class,
+            () -> this.lock.setPin(NEW_PIN)
+        );
+        assertEquals(DOOR_CURRENTLY_BLOCKED, exception.getMessage());
+        assertEquals(DEFAULT_PIN, this.lock.getPin());
+    }
+
+    @Test
+    void testPinSettingInLockState() {
+        this.lock.setPin(DEFAULT_PIN);
+        this.lock.lock();
+        Exception exception = assertThrows(
+                IllegalStateException.class,
+                () -> this.lock.setPin(NEW_PIN)
+        );
+        assertEquals(DOOR_CURRENTLY_LOCKED, exception.getMessage());
+        assertEquals(DEFAULT_PIN, this.lock.getPin());
+    }
+
+    @Test
+    void testDoorLockUnlock() {
+        this.lock.setPin(DEFAULT_PIN);
+        this.lock.lock();
+        this.lock.unlock(DEFAULT_PIN);
+        assertFalse(this.lock.isLocked());
+    }
+
+    @Test
+    void testDoorUnlockOpenDoor() {
         this.lock.setPin(DEFAULT_PIN);
         Exception exception = assertThrows(
             IllegalStateException.class,
@@ -61,6 +98,19 @@ public class SmartDoorLockTest {
     }
 
     @Test
+    void testDoorUnlockBlockedDoor() {
+        this.lock.setPin(DEFAULT_PIN);
+        forceBlock();
+        boolean currentDoorLockStatus = this.lock.isLocked();
+        Exception exception = assertThrows(
+                IllegalStateException.class,
+                () -> this.lock.unlock(DEFAULT_PIN)
+        );
+        assertEquals(DOOR_CURRENTLY_BLOCKED, exception.getMessage());
+        assertEquals(currentDoorLockStatus, this.lock.isLocked());
+    }
+
+    @Test
     void testDoorLock() {
         this.lock.setPin(DEFAULT_PIN);
         this.lock.lock();
@@ -68,11 +118,25 @@ public class SmartDoorLockTest {
     }
 
     @Test
-    void testDoorLockUnlock() {
+    void testDoorLockWhileAlreadyLocked() {
         this.lock.setPin(DEFAULT_PIN);
         this.lock.lock();
-        this.lock.unlock(DEFAULT_PIN);
-        assertFalse(this.lock.isLocked());
+        Exception exception = assertThrows(
+            IllegalStateException.class,
+                () -> this.lock.lock()
+        );
+        assertEquals(DOOR_ALREADY_LOCKED, exception.getMessage());
+    }
+
+    @Test
+    void testDoorLockWhileBlocked() {
+        this.lock.setPin(DEFAULT_PIN);
+        forceBlock();
+        Exception exception = assertThrows(
+                IllegalStateException.class,
+                () -> this.lock.lock()
+        );
+        assertEquals(DOOR_CURRENTLY_BLOCKED, exception.getMessage());
     }
 
     @Test
@@ -86,10 +150,29 @@ public class SmartDoorLockTest {
     @Test
     void testWrongUntilBlock() {
         this.lock.setPin(DEFAULT_PIN);
+        forceBlock();
+        assertTrue(this.lock.isBlocked());
+    }
+
+    @Test
+    void testDoorReset() {
+        this.lock.setPin(DEFAULT_PIN);
+        forceBlock();
+        this.lock.reset();
+        Exception exception = assertThrows(
+            NoSuchElementException.class,
+            () -> this.lock.getPin()
+        );
+        assertEquals(PIN_NOT_SET, exception.getMessage());
+        assertFalse(this.lock.isLocked());
+        assertFalse(this.lock.isBlocked());
+        assertEquals(0, this.lock.getFailedAttempts());
+    }
+
+    private void forceBlock() {
         this.lock.lock();
         for (int i = 0; i < this.lock.getMaxAttempts(); i++) {
             this.lock.unlock(WRONG_PIN);
         }
-        assertTrue(this.lock.isBlocked());
     }
 }
