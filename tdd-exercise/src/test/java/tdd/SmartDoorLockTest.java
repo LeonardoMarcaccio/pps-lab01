@@ -22,7 +22,15 @@ public class SmartDoorLockTest {
 
     @Test
     void testPinSetting() {
-        lock.setPin(newPin);
+        this.lock.setPin(newPin);
         assertEquals(this.lock.getPin(), newPin);
     }
+
+    @Test
+    void testDoorUnlock() {
+        this.lock.unlock(defaultPin);
+        assertFalse(this.lock.isLocked());
+    }
+
+
 }
