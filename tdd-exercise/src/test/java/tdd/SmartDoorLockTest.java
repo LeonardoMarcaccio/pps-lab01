@@ -12,13 +12,14 @@ public class SmartDoorLockTest {
 
     @BeforeEach
     void beforeEach() {
-        lock = new SmartDoorLockImpl();
+        this.lock = new SmartDoorLockImpl();
+        this.lock.setPin(defaultPin);
     }
 
-    @Test
-    void testDefaultPin() {
-        assertEquals(this.lock.getPin(), this.defaultPin);
-    }
+//    @Test
+//    void testDefaultPin() {
+//        assertEquals(this.lock.getPin(), this.defaultPin);
+//    }
 
     @Test
     void testPinSetting() {
@@ -30,6 +31,12 @@ public class SmartDoorLockTest {
     void testDoorUnlock() {
         this.lock.unlock(defaultPin);
         assertFalse(this.lock.isLocked());
+    }
+
+    @Test
+    void testDoorLock() {
+        this.lock.lock();
+        assertTrue(this.lock.isLocked());
     }
 
 

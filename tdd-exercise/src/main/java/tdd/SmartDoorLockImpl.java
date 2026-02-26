@@ -1,37 +1,46 @@
 package tdd;
 
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.function.Supplier;
+
 public class SmartDoorLockImpl implements SmartDoorLock{
-    private static final int DEFAULT_PIN = 0;
     private static final boolean DEFAULT_LOCK_STATUS = false;
-    private int pin;
+    private Optional<Integer> pin;
     private boolean isLockedStatus;
 
     public int getPin() {
-        return pin;
+        return this.pin.orElseThrow(pinNotSetException());
     }
 
     public SmartDoorLockImpl() {
-        this.pin = DEFAULT_PIN;
-        this.isLockedStatus = DEFAULT_LOCK_STATUS;
+        this.pin = Optional.empty();
     }
 
     @Override
     public void setPin(int pin) {
-        this.pin = pin;
+        this.pin = Optional.of(pin);
     }
 
     @Override
     public void unlock(int pin) {
         if (this.isLockedStatus) {
-           throw new IllegalStateException("Door was already open");
-        } else if (this.pin == pin) {
+           throw new IllegalStateException("Door was already unlocked");
+        } else if (pin == this.pin.orElseThrow(pinNotSetException())) {
             this.isLockedStatus = false;
         }
     }
 
     @Override
     public void lock() {
-
+        if (!this.isLockedStatus) {
+            this.isLockedStatus = true;
+        } else {
+            throw new IllegalStateException("Door was already locked");
+        }
+        if (this.pin.isEmpty()) {
+            throw pinNotSetException().get();
+        }
     }
 
     @Override
@@ -57,6 +66,10 @@ public class SmartDoorLockImpl implements SmartDoorLock{
     @Override
     public void reset() {
 
+    }
+
+    private Supplier<NoSuchElementException> pinNotSetException() {
+        return () -> new NoSuchElementException("Pin wasn't set");
     }
 
 }
