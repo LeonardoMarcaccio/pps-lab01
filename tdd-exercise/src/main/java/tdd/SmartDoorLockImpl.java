@@ -1,24 +1,32 @@
 package tdd;
 
 import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 public class SmartDoorLockImpl implements SmartDoorLock{
     private static final boolean DEFAULT_LOCK_STATUS = false;
+    private static final int INVALID_PIN_VALUE = -1;
     private static final int MAX_ATTEMPTS = 3;
-    private Optional<Integer> pin;
+    private int pin;
+    private boolean isPinSetStatus;
     private boolean isLockedStatus;
     private boolean isBlockedStatus;
     private int failedAttempts;
 
     public int getPin() {
-        return this.pin.orElseThrow(pinNotSetException());
+        if (!this.isPinSetStatus) {
+            throw this.pinNotSetException();
+        }
+        return this.pin;
+    }
+
+    public boolean isPinSet() {
+        return this.isPinSetStatus;
     }
 
     public SmartDoorLockImpl() {
-        this.pin = Optional.empty();
+        this.pin = INVALID_PIN_VALUE;
         this.failedAttempts = 0;
+        this.isPinSetStatus = false;
         this.isLockedStatus = false;
         this.isBlockedStatus = false;
     }
@@ -27,12 +35,13 @@ public class SmartDoorLockImpl implements SmartDoorLock{
     public void setPin(int pin) {
         if (!this.isBlockedStatus) {
             if (!this.isLockedStatus) {
-                this.pin = Optional.of(pin);
+                this.pin = pin;
+                this.isPinSetStatus = true;
             } else {
-                throw new IllegalStateException("Door is locked");
+                throw this.doorCurrentlyLockedException();
             }
         } else {
-            throw new IllegalStateException("The door is blocked");
+            throw this.doorCurrentlyBlockedException();
         }
     }
 
@@ -40,17 +49,21 @@ public class SmartDoorLockImpl implements SmartDoorLock{
     public void unlock(int pin) {
         if (!this.isBlockedStatus) {
             if (this.isLockedStatus) {
-                if (pin == this.pin.orElseThrow(pinNotSetException())) {
-                    this.isLockedStatus = false;
+                if (this.isPinSetStatus) {
+                    if (pin == this.pin) {
+                        this.isLockedStatus = false;
+                    } else {
+                        this.failedAttempts = this.failedAttempts + 1; //I preferred to be more verbose than use ++ operator
+                        if (this.failedAttempts >= MAX_ATTEMPTS) {this.isBlockedStatus = true;}
+                    }
                 } else {
-                    this.failedAttempts = this.failedAttempts + 1; //I preferred to be more verbose than use ++ operator
-                    if (this.failedAttempts >= MAX_ATTEMPTS) {this.isBlockedStatus = true;}
+                    throw this.pinNotSetException();
                 }
             } else {
-                throw new IllegalStateException("The door was already unlocked");
+                throw this.doorAlreadyUnlockedException();
             }
         } else {
-            throw new IllegalStateException("The door is blocked");
+            throw this.doorCurrentlyBlockedException();
         }
     }
 
@@ -60,13 +73,13 @@ public class SmartDoorLockImpl implements SmartDoorLock{
             if (!this.isLockedStatus) {
                 this.isLockedStatus = true;
             } else {
-                throw new IllegalStateException("The door was already locked");
+                throw this.doorAlreadyLockedException();
             }
-            if (this.pin.isEmpty()) {
-                throw pinNotSetException().get();
+            if (!this.isPinSetStatus) {
+                throw this.pinNotSetException();
             }
         } else {
-            throw new IllegalStateException("The door is blocked");
+            throw this.doorCurrentlyBlockedException();
         }
     }
 
@@ -92,14 +105,30 @@ public class SmartDoorLockImpl implements SmartDoorLock{
 
     @Override
     public void reset() {
-        this.pin = Optional.empty();
-        this.isLockedStatus = false;
+        this.pin = INVALID_PIN_VALUE;
         this.failedAttempts = 0;
+        this.isPinSetStatus = false;
+        this.isLockedStatus = false;
         this.isBlockedStatus = false;
     }
 
-    private Supplier<NoSuchElementException> pinNotSetException() {
-        return () -> new NoSuchElementException("Pin wasn't set");
+    private NoSuchElementException pinNotSetException() {
+        return new NoSuchElementException("Pin wasn't set");
     }
 
+    private IllegalStateException doorAlreadyUnlockedException() {
+        return new IllegalStateException("The door was already unlocked");
+    }
+
+    private IllegalStateException doorAlreadyLockedException() {
+        return new IllegalStateException("The door was already locked");
+    }
+
+    private IllegalStateException doorCurrentlyBlockedException() {
+        return new IllegalStateException("Door is blocked");
+    }
+
+    private IllegalStateException doorCurrentlyLockedException() {
+        return new IllegalStateException("Door is locked");
+    }
 }

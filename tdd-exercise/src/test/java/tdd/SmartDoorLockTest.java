@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,11 +13,11 @@ public class SmartDoorLockTest {
     private static final int DEFAULT_PIN = 1111;
     private static final int NEW_PIN = 1234;
     private static final int WRONG_PIN = 2222;
+    private static final String PIN_NOT_SET = "Pin wasn't set";
     private static final String DOOR_ALREADY_UNLOCKED = "The door was already unlocked";
     private static final String DOOR_ALREADY_LOCKED = "The door was already locked";
-    private static final String DOOR_CURRENTLY_BLOCKED = "The door is blocked";
+    private static final String DOOR_CURRENTLY_BLOCKED = "Door is blocked";
     private static final String DOOR_CURRENTLY_LOCKED = "Door is locked";
-    private static final String PIN_NOT_SET = "Pin wasn't set";
 
     /* QUESTION TO THE PROFESSOR
      * The main issue I found during this exercise was how to decide if I can call a method
@@ -39,18 +40,20 @@ public class SmartDoorLockTest {
 
     @Test
     void testDefaultLock() {
-        assertFalse(this.lock.isLocked());
-        assertFalse(this.lock.isBlocked());
         Exception exception = assertThrows(
             NoSuchElementException.class,
-            () -> this.lock.getPin()
+                () -> this.lock.getPin()
         );
+        assertFalse(this.lock.isPinSet());
+        assertFalse(this.lock.isLocked());
+        assertFalse(this.lock.isBlocked());
         assertEquals(PIN_NOT_SET, exception.getMessage());
     }
 
     @Test
     void testPinSetting() {
         this.lock.setPin(DEFAULT_PIN);
+        assertTrue(this.lock.isPinSet());
         assertEquals(DEFAULT_PIN, this.lock.getPin());
     }
 
